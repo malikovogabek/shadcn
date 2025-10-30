@@ -7,7 +7,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Evidence } from '@/types';
-import { mockEvidence } from '@/lib/mockData';
 import { Eye, AlertTriangle, Search, Filter } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -19,7 +18,7 @@ interface EvidenceTableProps {
 }
 
 export const EvidenceTable: React.FC<EvidenceTableProps> = ({ 
-  evidenceList = mockEvidence, 
+  evidenceList = [], 
   showActions = true,
   title = "Ashyoviy Dalillar",
   showFilters = false

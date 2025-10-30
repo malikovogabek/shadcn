@@ -3,7 +3,7 @@ export interface User {
   name: string;
   username: string;
   password: string;
-  role: 'administrator' | 'tergovchi' | 'rahbariyat';
+  role: 'admin' | 'tergovchi' | 'rahbariyat';
   lastActivity: string;
 }
 
@@ -19,7 +19,7 @@ export interface Evidence {
   receivedBy: string;
   storageLocation: string;
   enteredBy: string;
-  images: string[];
+  images: (string | File)[];
   storageDeadline?: string;
   storageType: 'specific_date' | 'lifetime';
   status: 'active' | 'completed' | 'removed';
@@ -53,7 +53,7 @@ export interface ActivityLog {
 
 export interface AuthContextType {
   user: User | null;
-  login: (username: string, password: string) => boolean;
+  login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
   isAuthenticated: boolean;
 }

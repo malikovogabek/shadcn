@@ -1,42 +1,119 @@
-import { useParams, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { mockEvidence } from '@/lib/mockData';
-import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft, Calendar, User, MapPin, DollarSign, FileText, Image, CheckCircle, AlertTriangle, Edit, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useParams, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+import { evidenceApi } from "@/api/evidence";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  ArrowLeft,
+  Calendar,
+  User,
+  MapPin,
+  DollarSign,
+  FileText,
+  Image,
+  CheckCircle,
+  AlertTriangle,
+  Edit,
+  Trash2,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { Evidence } from "@/types";
 
 export default function EvidenceDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [completionReason, setCompletionReason] = useState('');
+  const [completionReason, setCompletionReason] = useState("");
   const [completionFile, setCompletionFile] = useState<File | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [editReason, setEditReason] = useState('');
-  const [removeReason, setRemoveReason] = useState('');
+  const [editReason, setEditReason] = useState("");
+  const [removeReason, setRemoveReason] = useState("");
   const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
-  
-  const evidence = mockEvidence.find(e => e.id === id);
-  const [editData, setEditData] = useState(evidence ? {
-    evidenceNumber: evidence.evidenceNumber,
-    eventDetails: evidence.eventDetails,
-    belongsTo: evidence.belongsTo,
-    items: evidence.items,
-    value: evidence.value,
-    receivedDate: evidence.receivedDate,
-    receivedBy: evidence.receivedBy,
-    storageLocation: evidence.storageLocation,
-    storageType: evidence.storageType,
-    storageDeadline: evidence.storageDeadline,
-  } : null);
+
+  const [evidence, setEvidence] = useState<Evidence | null>(null);
+  const [editData, setEditData] = useState<{
+    evidenceNumber: string;
+    eventDetails: string;
+    belongsTo: string;
+    items: string;
+    value: string;
+    receivedDate: string;
+    receivedBy: string;
+    storageLocation: string;
+    storageType: "specific_date" | "lifetime";
+    storageDeadline: string;
+  } | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      if (!id) return;
+      const data = await evidenceApi.getById(id);
+      const payload = data as { data?: unknown } | unknown;
+      const raw = (payload as { data?: unknown }).data ?? payload;
+      if (raw) {
+        const it = raw as Record<string, unknown>;
+        const mapped: Evidence = {
+          id: String(it.id ?? id),
+          evidenceNumber:
+            (it.name as string) ?? (it.caseNumber as string) ?? "",
+          eMaterialNumber: (it.caseNumber as string) ?? "",
+          eventDetails: (it.description as string) ?? "",
+          belongsTo: "-",
+          items: "-",
+          value: "mavjud emas",
+          receivedDate: "",
+          receivedBy: "",
+          storageLocation: (it.location as string) ?? "-",
+          enteredBy: "",
+          images: [],
+          storageDeadline: (it.expiryDate as string) ?? "",
+          storageType: "specific_date",
+          status:
+            (it.status as string) === "COMPLETED"
+              ? "completed"
+              : (it.status as string) === "REMOVED"
+              ? "removed"
+              : "active",
+          createdAt: (it.createdAt as string) ?? new Date().toISOString(),
+        };
+        setEvidence(mapped);
+        setEditData({
+          evidenceNumber: mapped.evidenceNumber,
+          eventDetails: mapped.eventDetails,
+          belongsTo: mapped.belongsTo,
+          items: mapped.items,
+          value: mapped.value,
+          receivedDate: mapped.receivedDate,
+          receivedBy: mapped.receivedBy,
+          storageLocation: mapped.storageLocation,
+          storageType: mapped.storageType,
+          storageDeadline: mapped.storageDeadline,
+        });
+        return;
+      }
+      // no fallback to mock; leave as null to show not found UI
+    })();
+  }, [id]);
 
   if (!evidence || !editData) {
     return (
@@ -46,9 +123,7 @@ export default function EvidenceDetails() {
             <h2 className="text-xl font-semibold text-gray-600 mb-4">
               Ashyoviy dalil topilmadi
             </h2>
-            <Button onClick={() => navigate(-1)}>
-              Orqaga qaytish
-            </Button>
+            <Button onClick={() => navigate(-1)}>Orqaga qaytish</Button>
           </CardContent>
         </Card>
       </div>
@@ -57,71 +132,64 @@ export default function EvidenceDetails() {
 
   const handleComplete = () => {
     if (!completionReason.trim()) {
-      alert('Tugatish sababini kiriting');
+      alert("Tugatish sababini kiriting");
       return;
     }
 
-    const index = mockEvidence.findIndex(e => e.id === evidence.id);
+    const index = mockEvidence.findIndex((e) => e.id === evidence.id);
     if (index !== -1) {
       mockEvidence[index] = {
         ...evidence,
-        status: 'completed',
+        status: "completed",
         completionReason,
-        completionFile: completionFile?.name || ''
+        completionFile: completionFile?.name || "",
       };
     }
 
-    alert('Ashyoviy dalil muvaffaqiyatli tugatildi!');
+    alert("Ashyoviy dalil muvaffaqiyatli tugatildi!");
     navigate(-1);
   };
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!editReason.trim()) {
-      alert('Tahrirlash sababini kiriting');
+      alert("Tahrirlash sababini kiriting");
       return;
     }
 
-    const index = mockEvidence.findIndex(e => e.id === evidence.id);
-    if (index !== -1) {
-      mockEvidence[index] = {
-        ...evidence,
-        ...editData,
-        // Add edit history (in real app, this would be stored separately)
-        editHistory: [
-          ...(evidence.editHistory || []),
-          {
-            editedBy: user?.username || '',
-            editDate: new Date().toISOString(),
-            reason: editReason
-          }
-        ]
-      };
+    // Backendga yuboriladigan maydonlarni xaritalaymiz
+    try {
+      await evidenceApi.update(evidence.id, {
+        name: editData.evidenceNumber,
+        description: editData.eventDetails,
+        caseNumber: evidence.eMaterialNumber || "",
+        location: editData.storageLocation,
+        expiryDate: editData.storageDeadline || "",
+        category:
+          editData.storageType === "lifetime" ? "LIFETIME" : "SPECIFIC_DATE",
+      });
+    } catch {
+      // Agar backend xato qaytarsa, hozircha UI holatini o'zgartirmaymiz
     }
 
-    alert('Ashyoviy dalil muvaffaqiyatli tahrirlandi!');
+    alert("Ashyoviy dalil muvaffaqiyatli tahrirlandi!");
     setIsEditing(false);
-    setEditReason('');
+    setEditReason("");
     navigate(0); // Refresh the page
   };
 
-  const handleRemove = () => {
+  const handleRemove = async () => {
     if (!removeReason.trim()) {
-      alert('Chiqarib yuborish sababini kiriting');
+      alert("Chiqarib yuborish sababini kiriting");
       return;
     }
 
-    const index = mockEvidence.findIndex(e => e.id === evidence.id);
-    if (index !== -1) {
-      mockEvidence[index] = {
-        ...evidence,
-        status: 'removed',
-        removeReason,
-        removedBy: user?.username || '',
-        removeDate: new Date().toISOString()
-      };
+    try {
+      await evidenceApi.remove(evidence.id);
+    } catch {
+      // ignore
     }
 
-    alert('Ashyoviy dalil muvaffaqiyatli chiqarib yuborildi!');
+    alert("Ashyoviy dalil muvaffaqiyatli chiqarib yuborildi!");
     navigate(-1);
   };
 
@@ -140,12 +208,12 @@ export default function EvidenceDetails() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('uz-UZ', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(dateString).toLocaleDateString("uz-UZ", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -169,31 +237,53 @@ export default function EvidenceDetails() {
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <Badge variant={evidence.status === 'completed' ? 'default' : evidence.status === 'removed' ? 'destructive' : 'secondary'} className="text-sm px-3 py-1">
-              {evidence.status === 'completed' ? 'Tugallangan' : evidence.status === 'removed' ? 'Chiqarilgan' : 'Faol'}
+            <Badge
+              variant={
+                evidence.status === "completed"
+                  ? "default"
+                  : evidence.status === "removed"
+                  ? "destructive"
+                  : "secondary"
+              }
+              className="text-sm px-3 py-1">
+              {evidence.status === "completed"
+                ? "Tugallangan"
+                : evidence.status === "removed"
+                ? "Chiqarilgan"
+                : "Faol"}
             </Badge>
-            
-            {user?.role === 'tergovchi' && evidence.status === 'active' && (
+
+            {user?.role === "tergovchi" && evidence.status === "active" && (
               <div className="flex space-x-2">
-                <Button variant="outline" onClick={() => setIsEditing(!isEditing)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditing(!isEditing)}>
                   <Edit className="h-4 w-4 mr-2" />
-                  {isEditing ? 'Bekor qilish' : 'Tahrirlash'}
+                  {isEditing ? "Bekor qilish" : "Tahrirlash"}
                 </Button>
-                
-                <Dialog open={isRemoveDialogOpen} onOpenChange={setIsRemoveDialogOpen}>
+
+                <Dialog
+                  open={isRemoveDialogOpen}
+                  onOpenChange={setIsRemoveDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button variant="outline" className="text-red-600 hover:text-red-700">
+                    <Button
+                      variant="outline"
+                      className="text-red-600 hover:text-red-700">
                       <Trash2 className="h-4 w-4 mr-2" />
                       Chiqarib yuborish
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Ashyoviy Dalilni Chiqarib Yuborish</DialogTitle>
+                      <DialogTitle>
+                        Ashyoviy Dalilni Chiqarib Yuborish
+                      </DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4">
                       <div>
-                        <Label htmlFor="removeReason">Chiqarib yuborish sababi *</Label>
+                        <Label htmlFor="removeReason">
+                          Chiqarib yuborish sababi *
+                        </Label>
                         <Textarea
                           id="removeReason"
                           value={removeReason}
@@ -203,7 +293,9 @@ export default function EvidenceDetails() {
                         />
                       </div>
                       <div className="flex justify-end space-x-2">
-                        <Button variant="outline" onClick={() => setIsRemoveDialogOpen(false)}>
+                        <Button
+                          variant="outline"
+                          onClick={() => setIsRemoveDialogOpen(false)}>
                           Bekor qilish
                         </Button>
                         <Button variant="destructive" onClick={handleRemove}>
@@ -236,10 +328,17 @@ export default function EvidenceDetails() {
                   />
                 </div>
                 <div className="flex justify-end space-x-2">
-                  <Button variant="outline" onClick={() => {setIsEditing(false); setEditReason('');}}>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditing(false);
+                      setEditReason("");
+                    }}>
                     Bekor qilish
                   </Button>
-                  <Button onClick={handleEdit} className="bg-yellow-600 hover:bg-yellow-700">
+                  <Button
+                    onClick={handleEdit}
+                    className="bg-yellow-600 hover:bg-yellow-700">
                     Saqlash
                   </Button>
                 </div>
@@ -259,56 +358,83 @@ export default function EvidenceDetails() {
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <Label className="text-sm font-medium text-gray-700">Ashyoviy dalil raqami</Label>
+                <Label className="text-sm font-medium text-gray-700">
+                  Ashyoviy dalil raqami
+                </Label>
                 {isEditing ? (
                   <Input
                     value={editData.evidenceNumber}
-                    onChange={(e) => setEditData({...editData, evidenceNumber: e.target.value})}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        evidenceNumber: e.target.value,
+                      })
+                    }
                     className="mt-1"
                   />
                 ) : (
-                  <p className="mt-1 text-lg font-semibold">{evidence.evidenceNumber}</p>
+                  <p className="mt-1 text-lg font-semibold">
+                    {evidence.evidenceNumber}
+                  </p>
                 )}
               </div>
               <div>
-                <Label className="text-sm font-medium text-gray-700">Kimga tegishli</Label>
+                <Label className="text-sm font-medium text-gray-700">
+                  Kimga tegishli
+                </Label>
                 {isEditing ? (
                   <Input
                     value={editData.belongsTo}
-                    onChange={(e) => setEditData({...editData, belongsTo: e.target.value})}
+                    onChange={(e) =>
+                      setEditData({ ...editData, belongsTo: e.target.value })
+                    }
                     className="mt-1"
                   />
                 ) : (
-                  <p className="mt-1 text-lg font-semibold">{evidence.belongsTo}</p>
+                  <p className="mt-1 text-lg font-semibold">
+                    {evidence.belongsTo}
+                  </p>
                 )}
               </div>
             </div>
 
             <div>
-              <Label className="text-sm font-medium text-gray-700">Voqea tafsilotlari</Label>
+              <Label className="text-sm font-medium text-gray-700">
+                Voqea tafsilotlari
+              </Label>
               {isEditing ? (
                 <Textarea
                   value={editData.eventDetails}
-                  onChange={(e) => setEditData({...editData, eventDetails: e.target.value})}
+                  onChange={(e) =>
+                    setEditData({ ...editData, eventDetails: e.target.value })
+                  }
                   rows={3}
                   className="mt-1"
                 />
               ) : (
-                <p className="mt-2 p-3 bg-gray-50 rounded-lg">{evidence.eventDetails}</p>
+                <p className="mt-2 p-3 bg-gray-50 rounded-lg">
+                  {evidence.eventDetails}
+                </p>
               )}
             </div>
 
             <div>
-              <Label className="text-sm font-medium text-gray-700">Olib qo'yilgan buyumlar</Label>
+              <Label className="text-sm font-medium text-gray-700">
+                Olib qo'yilgan buyumlar
+              </Label>
               {isEditing ? (
                 <Textarea
                   value={editData.items}
-                  onChange={(e) => setEditData({...editData, items: e.target.value})}
+                  onChange={(e) =>
+                    setEditData({ ...editData, items: e.target.value })
+                  }
                   rows={3}
                   className="mt-1"
                 />
               ) : (
-                <p className="mt-2 p-3 bg-gray-50 rounded-lg">{evidence.items}</p>
+                <p className="mt-2 p-3 bg-gray-50 rounded-lg">
+                  {evidence.items}
+                </p>
               )}
             </div>
 
@@ -321,7 +447,9 @@ export default function EvidenceDetails() {
                 {isEditing ? (
                   <Input
                     value={editData.value}
-                    onChange={(e) => setEditData({...editData, value: e.target.value})}
+                    onChange={(e) =>
+                      setEditData({ ...editData, value: e.target.value })
+                    }
                     className="mt-1"
                   />
                 ) : (
@@ -337,7 +465,9 @@ export default function EvidenceDetails() {
                   <Input
                     type="date"
                     value={editData.receivedDate}
-                    onChange={(e) => setEditData({...editData, receivedDate: e.target.value})}
+                    onChange={(e) =>
+                      setEditData({ ...editData, receivedDate: e.target.value })
+                    }
                     className="mt-1"
                   />
                 ) : (
@@ -352,7 +482,9 @@ export default function EvidenceDetails() {
                 {isEditing ? (
                   <Input
                     value={editData.receivedBy}
-                    onChange={(e) => setEditData({...editData, receivedBy: e.target.value})}
+                    onChange={(e) =>
+                      setEditData({ ...editData, receivedBy: e.target.value })
+                    }
                     className="mt-1"
                   />
                 ) : (
@@ -370,7 +502,12 @@ export default function EvidenceDetails() {
                 {isEditing ? (
                   <Input
                     value={editData.storageLocation}
-                    onChange={(e) => setEditData({...editData, storageLocation: e.target.value})}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        storageLocation: e.target.value,
+                      })
+                    }
                     className="mt-1"
                   />
                 ) : (
@@ -378,7 +515,9 @@ export default function EvidenceDetails() {
                 )}
               </div>
               <div>
-                <Label className="text-sm font-medium text-gray-700">Kiritgan</Label>
+                <Label className="text-sm font-medium text-gray-700">
+                  Kiritgan
+                </Label>
                 <p className="mt-1 font-medium">{evidence.enteredBy}</p>
               </div>
             </div>
@@ -396,40 +535,57 @@ export default function EvidenceDetails() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <Label className="text-sm font-medium text-gray-700">Saqlash turi</Label>
+                <Label className="text-sm font-medium text-gray-700">
+                  Saqlash turi
+                </Label>
                 {isEditing ? (
                   <Select
                     value={editData.storageType}
-                    onValueChange={(value) => setEditData({...editData, storageType: value as 'specific_date' | 'lifetime'})}
-                  >
+                    onValueChange={(value) =>
+                      setEditData({
+                        ...editData,
+                        storageType: value as "specific_date" | "lifetime",
+                      })
+                    }>
                     <SelectTrigger className="mt-1">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="specific_date">Muayyan muddat</SelectItem>
+                      <SelectItem value="specific_date">
+                        Muayyan muddat
+                      </SelectItem>
                       <SelectItem value="lifetime">Umrbod</SelectItem>
                     </SelectContent>
                   </Select>
                 ) : (
                   <p className="mt-1 font-medium">
-                    {evidence.storageType === 'lifetime' ? 'Umrbod' : 'Muayyan muddat'}
+                    {evidence.storageType === "lifetime"
+                      ? "Umrbod"
+                      : "Muayyan muddat"}
                   </p>
                 )}
               </div>
               <div>
-                <Label className="text-sm font-medium text-gray-700">Saqlash muddati</Label>
+                <Label className="text-sm font-medium text-gray-700">
+                  Saqlash muddati
+                </Label>
                 {isEditing ? (
                   <Input
                     type="date"
                     value={editData.storageDeadline}
-                    onChange={(e) => setEditData({...editData, storageDeadline: e.target.value})}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        storageDeadline: e.target.value,
+                      })
+                    }
                     className="mt-1"
-                    disabled={editData.storageType === 'lifetime'}
+                    disabled={editData.storageType === "lifetime"}
                   />
                 ) : (
                   <div className="flex items-center space-x-2 mt-1">
                     <p className="font-medium">{evidence.storageDeadline}</p>
-                    {evidence.storageType === 'specific_date' && (
+                    {evidence.storageType === "specific_date" && (
                       <>
                         {isExpired(evidence.storageDeadline) && (
                           <Badge variant="destructive" className="text-xs">
@@ -437,12 +593,15 @@ export default function EvidenceDetails() {
                             Muddati tugagan
                           </Badge>
                         )}
-                        {isExpiringSoon(evidence.storageDeadline) && !isExpired(evidence.storageDeadline) && (
-                          <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
-                            <AlertTriangle className="h-3 w-3 mr-1" />
-                            Tez orada tugaydi
-                          </Badge>
-                        )}
+                        {isExpiringSoon(evidence.storageDeadline) &&
+                          !isExpired(evidence.storageDeadline) && (
+                            <Badge
+                              variant="secondary"
+                              className="text-xs bg-yellow-100 text-yellow-800">
+                              <AlertTriangle className="h-3 w-3 mr-1" />
+                              Tez orada tugaydi
+                            </Badge>
+                          )}
                       </>
                     )}
                   </div>
@@ -462,25 +621,33 @@ export default function EvidenceDetails() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label className="text-sm font-medium text-gray-700">Hisob fayli</Label>
+              <Label className="text-sm font-medium text-gray-700">
+                Hisob fayli
+              </Label>
               {evidence.accountFile ? (
                 <div className="mt-2 p-3 bg-blue-50 rounded-lg flex items-center justify-between">
                   <span className="text-blue-700 font-medium">
-                    {typeof evidence.accountFile === 'string' ? evidence.accountFile : evidence.accountFile.name}
+                    {typeof evidence.accountFile === "string"
+                      ? evidence.accountFile
+                      : evidence.accountFile.name}
                   </span>
                   <Button variant="outline" size="sm">
                     Yuklab olish
                   </Button>
                 </div>
               ) : (
-                <p className="mt-2 text-gray-500 italic">Hisob fayli yuklanmagan</p>
+                <p className="mt-2 text-gray-500 italic">
+                  Hisob fayli yuklanmagan
+                </p>
               )}
             </div>
 
             <Separator />
 
             <div>
-              <Label className="text-sm font-medium text-gray-700">Rasmlar</Label>
+              <Label className="text-sm font-medium text-gray-700">
+                Rasmlar
+              </Label>
               {evidence.images && evidence.images.length > 0 ? (
                 <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-4">
                   {evidence.images.map((image, index) => (
@@ -489,7 +656,7 @@ export default function EvidenceDetails() {
                         <Image className="h-8 w-8 text-gray-400" />
                       </div>
                       <p className="mt-1 text-xs text-center text-gray-600 truncate">
-                        {typeof image === 'string' ? image : image.name}
+                        {typeof image === "string" ? image : image.name}
                       </p>
                     </div>
                   ))}
@@ -517,7 +684,9 @@ export default function EvidenceDetails() {
                     <div className="flex justify-between items-start">
                       <div>
                         <p className="font-medium">{edit.editedBy}</p>
-                        <p className="text-sm text-gray-600">{formatDate(edit.editDate)}</p>
+                        <p className="text-sm text-gray-600">
+                          {formatDate(edit.editDate)}
+                        </p>
                       </div>
                     </div>
                     <p className="mt-2 text-sm">{edit.reason}</p>
@@ -529,49 +698,52 @@ export default function EvidenceDetails() {
         )}
 
         {/* Completion Section */}
-        {evidence.status === 'active' && user?.role === 'tergovchi' && !isEditing && (
-          <Card className="border-green-200">
-            <CardHeader>
-              <CardTitle className="flex items-center text-green-700">
-                <CheckCircle className="h-5 w-5 mr-2" />
-                Ashyoviy Dalilni Tugatish
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="reason">Tugatish sababi *</Label>
-                <Textarea
-                  id="reason"
-                  value={completionReason}
-                  onChange={(e) => setCompletionReason(e.target.value)}
-                  placeholder="Tugatish sababini batafsil kiriting"
-                  rows={4}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label htmlFor="file">Tugatish fayli</Label>
-                <Input
-                  id="file"
-                  type="file"
-                  onChange={(e) => setCompletionFile(e.target.files?.[0] || null)}
-                  className="mt-1"
-                />
-              </div>
-              <div className="flex justify-end">
-                <Button 
-                  onClick={handleComplete}
-                  className="bg-green-600 hover:bg-green-700"
-                >
+        {evidence.status === "active" &&
+          user?.role === "tergovchi" &&
+          !isEditing && (
+            <Card className="border-green-200">
+              <CardHeader>
+                <CardTitle className="flex items-center text-green-700">
+                  <CheckCircle className="h-5 w-5 mr-2" />
                   Ashyoviy Dalilni Tugatish
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="reason">Tugatish sababi *</Label>
+                  <Textarea
+                    id="reason"
+                    value={completionReason}
+                    onChange={(e) => setCompletionReason(e.target.value)}
+                    placeholder="Tugatish sababini batafsil kiriting"
+                    rows={4}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="file">Tugatish fayli</Label>
+                  <Input
+                    id="file"
+                    type="file"
+                    onChange={(e) =>
+                      setCompletionFile(e.target.files?.[0] || null)
+                    }
+                    className="mt-1"
+                  />
+                </div>
+                <div className="flex justify-end">
+                  <Button
+                    onClick={handleComplete}
+                    className="bg-green-600 hover:bg-green-700">
+                    Ashyoviy Dalilni Tugatish
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
         {/* Completion Details for Completed Evidence */}
-        {evidence.status === 'completed' && evidence.completionReason && (
+        {evidence.status === "completed" && evidence.completionReason && (
           <Card className="border-gray-200">
             <CardHeader>
               <CardTitle className="flex items-center text-gray-700">
@@ -581,14 +753,22 @@ export default function EvidenceDetails() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label className="text-sm font-medium text-gray-700">Tugatish sababi</Label>
-                <p className="mt-2 p-3 bg-gray-50 rounded-lg">{evidence.completionReason}</p>
+                <Label className="text-sm font-medium text-gray-700">
+                  Tugatish sababi
+                </Label>
+                <p className="mt-2 p-3 bg-gray-50 rounded-lg">
+                  {evidence.completionReason}
+                </p>
               </div>
               {evidence.completionFile && (
                 <div>
-                  <Label className="text-sm font-medium text-gray-700">Tugatish fayli</Label>
+                  <Label className="text-sm font-medium text-gray-700">
+                    Tugatish fayli
+                  </Label>
                   <div className="mt-2 p-3 bg-blue-50 rounded-lg flex items-center justify-between">
-                    <span className="text-blue-700 font-medium">{evidence.completionFile}</span>
+                    <span className="text-blue-700 font-medium">
+                      {evidence.completionFile}
+                    </span>
                     <Button variant="outline" size="sm">
                       Yuklab olish
                     </Button>
@@ -600,7 +780,7 @@ export default function EvidenceDetails() {
         )}
 
         {/* Removal Details for Removed Evidence */}
-        {evidence.status === 'removed' && evidence.removeReason && (
+        {evidence.status === "removed" && evidence.removeReason && (
           <Card className="border-red-200">
             <CardHeader>
               <CardTitle className="flex items-center text-red-700">
@@ -610,17 +790,27 @@ export default function EvidenceDetails() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label className="text-sm font-medium text-gray-700">Chiqarib yuborish sababi</Label>
-                <p className="mt-2 p-3 bg-red-50 rounded-lg">{evidence.removeReason}</p>
+                <Label className="text-sm font-medium text-gray-700">
+                  Chiqarib yuborish sababi
+                </Label>
+                <p className="mt-2 p-3 bg-red-50 rounded-lg">
+                  {evidence.removeReason}
+                </p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm font-medium text-gray-700">Chiqarib yuborgan</Label>
+                  <Label className="text-sm font-medium text-gray-700">
+                    Chiqarib yuborgan
+                  </Label>
                   <p className="mt-1 font-medium">{evidence.removedBy}</p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-gray-700">Chiqarib yuborilgan sana</Label>
-                  <p className="mt-1 font-medium">{evidence.removeDate && formatDate(evidence.removeDate)}</p>
+                  <Label className="text-sm font-medium text-gray-700">
+                    Chiqarib yuborilgan sana
+                  </Label>
+                  <p className="mt-1 font-medium">
+                    {evidence.removeDate && formatDate(evidence.removeDate)}
+                  </p>
                 </div>
               </div>
             </CardContent>

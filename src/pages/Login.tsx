@@ -18,7 +18,7 @@ export default function Login() {
   const [error, setError] = useState("");
   const { login } = useAuth();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -26,8 +26,7 @@ export default function Login() {
       setError("Foydalanuvchi nomi va parolni kiriting");
       return;
     }
-
-    const success = login(username, password);
+    const success = await login(username, password);
     if (!success) {
       setError("Noto'g'ri foydalanuvchi nomi yoki parol");
     }

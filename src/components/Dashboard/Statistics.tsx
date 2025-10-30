@@ -1,47 +1,60 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { mockUsers, mockEvidence } from '@/lib/mockData';
 import { Users, FileText, CheckCircle, AlertTriangle } from 'lucide-react';
+import { usersApi } from '@/api/users';
+import { evidenceApi } from '@/api/evidence';
+import { useEffect, useState } from 'react';
 
 export const Statistics: React.FC = () => {
-  const totalUsers = mockUsers.length;
-  const totalEvidence = mockEvidence.length;
-  const activeEvidence = mockEvidence.filter(e => e.status === 'active').length;
-  const completedEvidence = mockEvidence.filter(e => e.status === 'completed').length;
-  
-  const expiringEvidence = mockEvidence.filter(e => {
-    if (e.storageType === 'lifetime') return false;
-    const deadlineDate = new Date(e.storageDeadline);
-    const today = new Date();
-    const diffTime = deadlineDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays <= 30 && diffDays > 0;
-  }).length;
+  const [counts, setCounts] = useState({ totalUsers: 0, totalEvidence: 0, active: 0, completed: 0, expiring: 0 });
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const ur = await usersApi.list();
+        const users = Array.isArray((ur as any)?.data) ? (ur as any).data : (Array.isArray(ur) ? ur : []);
+        const er = await evidenceApi.list();
+        const ev = Array.isArray((er as any)?.data) ? (er as any).data : (Array.isArray(er) ? er : []);
+        const active = ev.filter((e: any) => (e.status ?? 'ACTIVE') === 'ACTIVE').length;
+        const completed = ev.filter((e: any) => (e.status ?? '') === 'COMPLETED').length;
+        const expiring = ev.filter((e: any) => {
+          const storageType = (e.category as string) === 'LIFETIME' ? 'lifetime' : 'specific_date';
+          if (storageType === 'lifetime') return false;
+          const deadlineDate = new Date(e.expiryDate ?? e.storageDeadline ?? '');
+          const today = new Date();
+          const diffTime = deadlineDate.getTime() - today.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          return diffDays <= 30 && diffDays > 0;
+        }).length;
+        setCounts({ totalUsers: users.length, totalEvidence: ev.length, active, completed, expiring });
+      } catch {}
+    })();
+  }, []);
 
   const stats = [
     {
       title: 'Jami Foydalanuvchilar',
-      value: totalUsers,
+      value: counts.totalUsers,
       icon: Users,
       color: 'text-blue-600',
       bgColor: 'bg-blue-100'
     },
     {
       title: 'Jami Dalillar',
-      value: totalEvidence,
+      value: counts.totalEvidence,
       icon: FileText,
       color: 'text-green-600',
       bgColor: 'bg-green-100'
     },
     {
       title: 'Faol Ishlar',
-      value: activeEvidence,
+      value: counts.active,
       icon: CheckCircle,
       color: 'text-yellow-600',
       bgColor: 'bg-yellow-100'
     },
     {
       title: 'Muddati Tugayotganlar',
-      value: expiringEvidence,
+      value: counts.expiring,
       icon: AlertTriangle,
       color: 'text-red-600',
       bgColor: 'bg-red-100'
@@ -81,7 +94,7 @@ export const Statistics: React.FC = () => {
           <CardContent>
             <div className="space-y-3">
               {['administrator', 'tergovchi', 'rahbariyat'].map(role => {
-                const count = mockUsers.filter(u => u.role === role).length;
+                const count = 0; // Backenddan kerak bo'lsa role bo'yicha alohida endpoint bilan to'ldiriladi
                 const roleLabel = role === 'administrator' ? 'Administrator' : 
                                 role === 'tergovchi' ? 'Tergovchi' : 'Rahbariyat';
                 return (

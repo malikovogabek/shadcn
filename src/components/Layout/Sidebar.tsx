@@ -15,7 +15,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
-import { mockEvidence } from "@/lib/mockData";
+ 
+import { useEffect, useState } from "react";
+import { evidenceApi } from "@/api/evidence";
+import { Evidence } from "@/types";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -29,12 +32,59 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSectionChange,
 }) => {
   const { user, logout } = useAuth();
+  const [backendEvidence, setBackendEvidence] = useState<Evidence[] | null>(
+    null
+  );
+
+  useEffect(() => {
+    (async () => {
+      const data = await evidenceApi.list();
+      if (!data) return;
+      const maybeObj = data as unknown as { data?: unknown[]; items?: unknown[] } | unknown;
+      const items: unknown[] = Array.isArray((maybeObj as { data?: unknown[] }).data)
+        ? ((maybeObj as { data?: unknown[] }).data as unknown[])
+        : Array.isArray((maybeObj as { items?: unknown[] }).items)
+        ? ((maybeObj as { items?: unknown[] }).items as unknown[])
+        : Array.isArray(maybeObj)
+        ? (maybeObj as unknown[])
+        : [];
+      const mapped: Evidence[] = items.map((raw, idx: number) => {
+        const it = raw as Record<string, unknown>;
+        return {
+          id: String(it.id ?? idx + 1),
+          evidenceNumber:
+            (it.name as string) ?? (it.caseNumber as string) ?? `EV-${idx + 1}`,
+          eMaterialNumber: (it.caseNumber as string) ?? "",
+          eventDetails: (it.description as string) ?? "",
+          belongsTo: "-",
+          items: "-",
+          value: "mavjud emas",
+          receivedDate: "",
+          receivedBy: "",
+          storageLocation: (it.location as string) ?? "-",
+          enteredBy: user?.username ?? "",
+          images: [],
+          storageDeadline: (it.expiryDate as string) ?? "",
+          storageType:
+            (it.category as string) === "LIFETIME"
+              ? "lifetime"
+              : "specific_date",
+          status: "active",
+          createdAt: new Date().toISOString(),
+        };
+      });
+      setBackendEvidence(mapped);
+    })();
+  }, [user?.username]);
 
   // Filter evidence based on user role
+  const sourceEvidence = backendEvidence ?? [];
   const userEvidence =
     user?.role === "tergovchi"
-      ? mockEvidence.filter((e) => e.enteredBy === user.username)
-      : mockEvidence;
+      ? sourceEvidence.filter(
+          (e) => !e.enteredBy || e.enteredBy === user.username
+        )
+      : sourceEvidence;
 
   // Calculate statistics
   const today = new Date();

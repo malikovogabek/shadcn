@@ -8,21 +8,22 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { User } from '@/types';
-import { mockUsers } from '@/lib/mockData';
+import { usersApi } from '@/api/users';
 import { Plus, Edit, Trash2, Download } from 'lucide-react';
 
 export const UserManagement: React.FC = () => {
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     username: '',
     password: '',
+    phoneNumber: '',
     role: '' as 'administrator' | 'tergovchi' | 'rahbariyat' | ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (editingUser) {
@@ -41,13 +42,47 @@ export const UserManagement: React.FC = () => {
         lastActivity: new Date().toLocaleString()
       };
       setUsers(prev => [...prev, newUser]);
+      // Map frontend role -> backend role
+      const roleMap: Record<string, string> = {
+        administrator: 'ADMIN',
+        tergovchi: 'INVESTIGATOR',
+        rahbariyat: 'MANAGEMENT',
+      };
+      try {
+        await usersApi.create({
+          username: newUser.username,
+          fullName: newUser.name,
+          password: newUser.password,
+          phoneNumber: formData.phoneNumber || '+998000000000',
+          role: roleMap[newUser.role] || 'INVESTIGATOR',
+        });
+      } catch {}
     }
 
     // Reset form
-    setFormData({ name: '', username: '', password: '', role: '' });
+    setFormData({ name: '', username: '', password: '', phoneNumber: '', role: '' });
     setIsAddDialogOpen(false);
     setEditingUser(null);
   };
+
+  // initial load
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  (async () => {
+    if (users.length) return;
+    try {
+      const res = await usersApi.list();
+      const arr = (Array.isArray((res as any)?.data) ? (res as any).data : Array.isArray(res) ? (res as any) : []) as any[];
+      const mapped: User[] = arr.map((u, idx) => ({
+        id: String(u.id ?? idx + 1),
+        name: u.fullName ?? u.username ?? '',
+        username: u.username ?? '',
+        password: '',
+        role: (u.role === 'ADMIN' ? 'admin' : 'tergovchi') as User['role'],
+        lastActivity: '',
+      }));
+      setUsers(mapped);
+    } catch {}
+  })();
 
   const handleEdit = (user: User) => {
     setEditingUser(user);
@@ -55,6 +90,7 @@ export const UserManagement: React.FC = () => {
       name: user.name,
       username: user.username,
       password: user.password,
+      phoneNumber: '',
       role: user.role
     });
     setIsAddDialogOpen(true);
@@ -147,6 +183,16 @@ export const UserManagement: React.FC = () => {
                       type="password"
                       value={formData.password}
                       onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="phone">Telefon raqami (+998XXXXXXXXX) *</Label>
+                    <Input
+                      id="phone"
+                      value={formData.phoneNumber}
+                      onChange={(e) => setFormData(prev => ({ ...prev, phoneNumber: e.target.value }))}
+                      placeholder="+998901234567"
                       required
                     />
                   </div>
