@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import EvidenceDetails from "./pages/EvidenceDetails";
+import EvidenceView from "./pages/EvidenceView";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,10 @@ const AppRoutes = () => {
             <EvidenceDetails />
           </ProtectedRoute>
         }
+      />
+      <Route
+        path="/evidence/:id/view"
+        element={<EvidenceView />}
       />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<NotFound />} />

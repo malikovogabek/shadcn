@@ -36,7 +36,6 @@ import {
   Edit,
   Trash2,
   Download,
-  Printer,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
@@ -224,23 +223,9 @@ export default function EvidenceDetails() {
     });
   };
 
-  // QR code ma'lumotlari - to'liq ma'lumot JSON formatida
+  // QR code ma'lumotlari - URL formatida (fayl ko'rinishida sahifaga link)
   const getQRCodeData = () => {
-    return JSON.stringify({
-      id: evidence.id,
-      evidenceNumber: evidence.evidenceNumber,
-      eventDetails: evidence.eventDetails,
-      belongsTo: evidence.belongsTo,
-      items: evidence.items,
-      value: evidence.value,
-      receivedDate: evidence.receivedDate,
-      receivedBy: evidence.receivedBy,
-      storageLocation: evidence.storageLocation,
-      storageType: evidence.storageType,
-      storageDeadline: evidence.storageDeadline,
-      status: evidence.status,
-      url: `${window.location.origin}/evidence/${evidence.id}`,
-    });
+    return `${window.location.origin}/evidence/${evidence.id}/view`;
   };
 
   // QR code ni yuklab olish
@@ -269,66 +254,6 @@ export default function EvidenceDetails() {
     });
     const url = URL.createObjectURL(svgBlob);
     htmlImg.src = url;
-  };
-
-  // QR code ni print qilish
-  const handlePrintQR = () => {
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
-
-    const qrData = getQRCodeData();
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
-      qrData
-    )}`;
-
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>QR Code - ${evidence.evidenceNumber}</title>
-          <style>
-            body {
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: center;
-              padding: 40px;
-              font-family: Arial, sans-serif;
-            }
-            .qr-container {
-              text-align: center;
-            }
-            .qr-code {
-              margin: 20px 0;
-            }
-            .info {
-              margin-top: 20px;
-              font-size: 14px;
-              color: #666;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="qr-container">
-            <h2>Ashyoviy Dalil QR Code</h2>
-            <p><strong>Raqam:</strong> ${evidence.evidenceNumber}</p>
-            <div class="qr-code">
-              <img src="${qrUrl}" alt="QR Code" />
-            </div>
-            <div class="info">
-              <p>Ushbu QR code ni skanerlash orqali ashyoviy dalil ma'lumotlarini ko'rish mumkin</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `);
-
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-    }, 250);
   };
 
   return (
@@ -468,222 +393,222 @@ export default function EvidenceDetails() {
           </Card>
         )}
 
-        {/* Main Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <FileText className="h-5 w-5 mr-2" />
-              Asosiy Ma'lumotlar
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Main Information va QR Code - bitta qatorda */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Asosiy Ma'lumotlar - 2/3 qism */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <FileText className="h-5 w-5 mr-2" />
+                Asosiy Ma'lumotlar
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">
+                    Ashyoviy dalil raqami
+                  </Label>
+                  {isEditing ? (
+                    <Input
+                      value={editData.evidenceNumber}
+                      onChange={(e) =>
+                        setEditData({
+                          ...editData,
+                          evidenceNumber: e.target.value,
+                        })
+                      }
+                      className="mt-1"
+                    />
+                  ) : (
+                    <p className="mt-1 text-lg font-semibold">
+                      {evidence.evidenceNumber}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">
+                    Kimga tegishli
+                  </Label>
+                  {isEditing ? (
+                    <Input
+                      value={editData.belongsTo}
+                      onChange={(e) =>
+                        setEditData({ ...editData, belongsTo: e.target.value })
+                      }
+                      className="mt-1"
+                    />
+                  ) : (
+                    <p className="mt-1 text-lg font-semibold">
+                      {evidence.belongsTo}
+                    </p>
+                  )}
+                </div>
+              </div>
+
               <div>
                 <Label className="text-sm font-medium text-gray-700">
-                  Ashyoviy dalil raqami
+                  Voqea tafsilotlari
                 </Label>
                 {isEditing ? (
-                  <Input
-                    value={editData.evidenceNumber}
+                  <Textarea
+                    value={editData.eventDetails}
                     onChange={(e) =>
-                      setEditData({
-                        ...editData,
-                        evidenceNumber: e.target.value,
-                      })
+                      setEditData({ ...editData, eventDetails: e.target.value })
                     }
+                    rows={3}
                     className="mt-1"
                   />
                 ) : (
-                  <p className="mt-1 text-lg font-semibold">
-                    {evidence.evidenceNumber}
+                  <p className="mt-2 p-3 bg-gray-50 rounded-lg">
+                    {evidence.eventDetails}
                   </p>
                 )}
               </div>
+
               <div>
                 <Label className="text-sm font-medium text-gray-700">
-                  Kimga tegishli
+                  Olib qo'yilgan buyumlar
                 </Label>
                 {isEditing ? (
-                  <Input
-                    value={editData.belongsTo}
+                  <Textarea
+                    value={editData.items}
                     onChange={(e) =>
-                      setEditData({ ...editData, belongsTo: e.target.value })
+                      setEditData({ ...editData, items: e.target.value })
                     }
+                    rows={3}
                     className="mt-1"
                   />
                 ) : (
-                  <p className="mt-1 text-lg font-semibold">
-                    {evidence.belongsTo}
+                  <p className="mt-2 p-3 bg-gray-50 rounded-lg">
+                    {evidence.items}
                   </p>
                 )}
               </div>
-            </div>
 
-            <div>
-              <Label className="text-sm font-medium text-gray-700">
-                Voqea tafsilotlari
-              </Label>
-              {isEditing ? (
-                <Textarea
-                  value={editData.eventDetails}
-                  onChange={(e) =>
-                    setEditData({ ...editData, eventDetails: e.target.value })
-                  }
-                  rows={3}
-                  className="mt-1"
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 flex items-center">
+                    <DollarSign className="h-4 w-4 mr-1" />
+                    Bahosi
+                  </Label>
+                  {isEditing ? (
+                    <Input
+                      value={editData.value}
+                      onChange={(e) =>
+                        setEditData({ ...editData, value: e.target.value })
+                      }
+                      className="mt-1"
+                    />
+                  ) : (
+                    <p className="mt-1 font-medium">{evidence.value}</p>
+                  )}
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 flex items-center">
+                    <Calendar className="h-4 w-4 mr-1" />
+                    Qabul qilingan sana
+                  </Label>
+                  {isEditing ? (
+                    <Input
+                      type="date"
+                      value={editData.receivedDate}
+                      onChange={(e) =>
+                        setEditData({
+                          ...editData,
+                          receivedDate: e.target.value,
+                        })
+                      }
+                      className="mt-1"
+                    />
+                  ) : (
+                    <p className="mt-1 font-medium">{evidence.receivedDate}</p>
+                  )}
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 flex items-center">
+                    <User className="h-4 w-4 mr-1" />
+                    Qabul qilgan
+                  </Label>
+                  {isEditing ? (
+                    <Input
+                      value={editData.receivedBy}
+                      onChange={(e) =>
+                        setEditData({ ...editData, receivedBy: e.target.value })
+                      }
+                      className="mt-1"
+                    />
+                  ) : (
+                    <p className="mt-1 font-medium">{evidence.receivedBy}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 flex items-center">
+                    <MapPin className="h-4 w-4 mr-1" />
+                    Saqlash joyi
+                  </Label>
+                  {isEditing ? (
+                    <Input
+                      value={editData.storageLocation}
+                      onChange={(e) =>
+                        setEditData({
+                          ...editData,
+                          storageLocation: e.target.value,
+                        })
+                      }
+                      className="mt-1"
+                    />
+                  ) : (
+                    <p className="mt-1 font-medium">
+                      {evidence.storageLocation}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">
+                    Kiritgan
+                  </Label>
+                  <p className="mt-1 font-medium">{evidence.enteredBy}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* QR Code Section - 1/3 qism */}
+          <Card className="lg:col-span-1">
+            <CardHeader>
+              <CardTitle>QR Code</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center space-y-4">
+              <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
+                <QRCodeSVG
+                  id="qrcode-svg"
+                  value={getQRCodeData()}
+                  size={256}
+                  level="H"
+                  includeMargin={true}
                 />
-              ) : (
-                <p className="mt-2 p-3 bg-gray-50 rounded-lg">
-                  {evidence.eventDetails}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <Label className="text-sm font-medium text-gray-700">
-                Olib qo'yilgan buyumlar
-              </Label>
-              {isEditing ? (
-                <Textarea
-                  value={editData.items}
-                  onChange={(e) =>
-                    setEditData({ ...editData, items: e.target.value })
-                  }
-                  rows={3}
-                  className="mt-1"
-                />
-              ) : (
-                <p className="mt-2 p-3 bg-gray-50 rounded-lg">
-                  {evidence.items}
-                </p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <Label className="text-sm font-medium text-gray-700 flex items-center">
-                  <DollarSign className="h-4 w-4 mr-1" />
-                  Bahosi
-                </Label>
-                {isEditing ? (
-                  <Input
-                    value={editData.value}
-                    onChange={(e) =>
-                      setEditData({ ...editData, value: e.target.value })
-                    }
-                    className="mt-1"
-                  />
-                ) : (
-                  <p className="mt-1 font-medium">{evidence.value}</p>
-                )}
               </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-700 flex items-center">
-                  <Calendar className="h-4 w-4 mr-1" />
-                  Qabul qilingan sana
-                </Label>
-                {isEditing ? (
-                  <Input
-                    type="date"
-                    value={editData.receivedDate}
-                    onChange={(e) =>
-                      setEditData({ ...editData, receivedDate: e.target.value })
-                    }
-                    className="mt-1"
-                  />
-                ) : (
-                  <p className="mt-1 font-medium">{evidence.receivedDate}</p>
-                )}
+              <p className="text-sm text-gray-600 text-center max-w-md">
+                Ushbu QR code ni skanerlash orqali ashyoviy dalil ma'lumotlarini
+                ko'rish mumkin
+              </p>
+              <div className="flex justify-center">
+                <Button
+                  variant="outline"
+                  onClick={handleDownloadQR}
+                  className="flex items-center"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  QR Code ni yuklab olish
+                </Button>
               </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-700 flex items-center">
-                  <User className="h-4 w-4 mr-1" />
-                  Qabul qilgan
-                </Label>
-                {isEditing ? (
-                  <Input
-                    value={editData.receivedBy}
-                    onChange={(e) =>
-                      setEditData({ ...editData, receivedBy: e.target.value })
-                    }
-                    className="mt-1"
-                  />
-                ) : (
-                  <p className="mt-1 font-medium">{evidence.receivedBy}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <Label className="text-sm font-medium text-gray-700 flex items-center">
-                  <MapPin className="h-4 w-4 mr-1" />
-                  Saqlash joyi
-                </Label>
-                {isEditing ? (
-                  <Input
-                    value={editData.storageLocation}
-                    onChange={(e) =>
-                      setEditData({
-                        ...editData,
-                        storageLocation: e.target.value,
-                      })
-                    }
-                    className="mt-1"
-                  />
-                ) : (
-                  <p className="mt-1 font-medium">{evidence.storageLocation}</p>
-                )}
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-700">
-                  Kiritgan
-                </Label>
-                <p className="mt-1 font-medium">{evidence.enteredBy}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* QR Code Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>QR Code</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center space-y-4">
-            <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
-              <QRCodeSVG
-                id="qrcode-svg"
-                value={getQRCodeData()}
-                size={256}
-                level="H"
-                includeMargin={true}
-              />
-            </div>
-            <p className="text-sm text-gray-600 text-center max-w-md">
-              Ushbu QR code ni skanerlash orqali ashyoviy dalil ma'lumotlarini
-              ko'rish mumkin
-            </p>
-            <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                onClick={handleDownloadQR}
-                className="flex items-center"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                QR Code ni yuklab olish
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handlePrintQR}
-                className="flex items-center"
-              >
-                <Printer className="h-4 w-4 mr-2" />
-                Print qilish
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Storage Information */}
         <Card>
