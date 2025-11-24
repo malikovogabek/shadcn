@@ -41,6 +41,18 @@ import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
 import { Evidence } from "@/types";
 
+const formatStorageDeadline = (value: string) => {
+  if (!value) return "-";
+  const [datePart] = value.split("T");
+  if (datePart && /^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+    return datePart;
+  }
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime())
+    ? value
+    : parsed.toISOString().split("T")[0];
+};
+
 export default function EvidenceDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -659,7 +671,7 @@ export default function EvidenceDetails() {
                 {isEditing ? (
                   <Input
                     type="date"
-                    value={editData.storageDeadline}
+                    value={formatStorageDeadline(editData.storageDeadline)}
                     onChange={(e) =>
                       setEditData({
                         ...editData,
@@ -671,7 +683,9 @@ export default function EvidenceDetails() {
                   />
                 ) : (
                   <div className="flex items-center space-x-2 mt-1">
-                    <p className="font-medium">{evidence.storageDeadline}</p>
+                    <p className="font-medium">
+                      {formatStorageDeadline(evidence.storageDeadline)}
+                    </p>
                     {evidence.storageType === "specific_date" && (
                       <>
                         {isExpired(evidence.storageDeadline) && (
