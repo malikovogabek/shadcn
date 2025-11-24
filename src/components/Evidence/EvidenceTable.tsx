@@ -53,7 +53,6 @@ export const EvidenceTable: React.FC<EvidenceTableProps> = ({
     null
   );
   const [showLoadingDialog, setShowLoadingDialog] = useState(false);
-  const [showNotFoundDialog, setShowNotFoundDialog] = useState(false);
 
   const isExpiringSoon = (deadline: string) => {
     const deadlineDate = new Date(deadline);
@@ -74,36 +73,19 @@ export const EvidenceTable: React.FC<EvidenceTableProps> = ({
     setShowLoadingDialog(true);
 
     try {
-      // 5 soniya timeout bilan ma'lumotni yuklashga urinamiz
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("Timeout")), 5000)
-      );
-
-      // Ma'lumotni yuklash
-      const dataPromise = evidenceApi.getById(evidenceId);
-
-      // Ikki promisening birini kutamiz (ma'lumot yoki timeout)
-      const data = await Promise.race([dataPromise, timeoutPromise]);
-
-      // Ma'lumot topildi, tekshiramiz
+      const data = await evidenceApi.getById(evidenceId);
       const payload = data as { data?: unknown } | unknown;
       const raw = (payload as { data?: unknown }).data ?? payload;
 
       if (raw) {
-        // Ma'lumot topildi, dialog yopamiz va navigate qilamiz
-        setShowLoadingDialog(false);
         navigate(`/evidence/${evidenceId}`);
       } else {
-        // Ma'lumot topilmadi, lekin 5 soniya o'tmagan, shunchaki navigate qilamiz
-        // EvidenceDetails sahifasida o'zi "topilmadi" ko'rsatadi
-        setShowLoadingDialog(false);
         navigate(`/evidence/${evidenceId}`);
       }
-    } catch (err) {
-      // Xatolik yoki timeout bo'lsa (5 soniyadan oshib ketsa)
-      setShowLoadingDialog(false);
-      setShowNotFoundDialog(true);
+    } catch (error) {
+      console.error("Ashyoviy dalilni yuklashda xato:", error);
     } finally {
+      setShowLoadingDialog(false);
       setLoadingEvidenceId(null);
     }
   };
@@ -280,37 +262,6 @@ export const EvidenceTable: React.FC<EvidenceTableProps> = ({
           </div>
         )}
       </CardContent>
-
-      {/* Loading dialog */}
-      <Dialog open={showLoadingDialog} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Ma'lumotlar yuklanmoqda</DialogTitle>
-          </DialogHeader>
-          <div className="py-8 flex flex-col items-center justify-center space-y-4">
-            <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
-            <p className="text-gray-600 text-center">Iltimos, kuting...</p>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Ma'lumot topilmadi dialog - faqat 5 soniyadan oshib ketganda */}
-      <Dialog open={showNotFoundDialog} onOpenChange={setShowNotFoundDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Ma'lumot topilmadi</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="text-gray-600">
-              Ashyoviy dalil ma'lumotlari yuklash vaqti tugadi. Iltimos, qayta
-              urinib ko'ring.
-            </p>
-          </div>
-          <div className="flex justify-end">
-            <Button onClick={() => setShowNotFoundDialog(false)}>Yopish</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </Card>
   );
 };

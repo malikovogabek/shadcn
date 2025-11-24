@@ -36,6 +36,7 @@ import {
   Edit,
   Trash2,
   Download,
+  Loader2,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
@@ -66,57 +67,80 @@ export default function EvidenceDetails() {
     storageType: "specific_date" | "lifetime";
     storageDeadline: string;
   } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
     (async () => {
-      if (!id) return;
-      const data = await evidenceApi.getById(id);
-      const payload = data as { data?: unknown } | unknown;
-      const raw = (payload as { data?: unknown }).data ?? payload;
-      if (raw) {
-        const it = raw as Record<string, unknown>;
-        const mapped: Evidence = {
-          id: String(it.id ?? id),
-          evidenceNumber:
-            (it.name as string) ?? (it.caseNumber as string) ?? "",
-          eMaterialNumber: (it.caseNumber as string) ?? "",
-          eventDetails: (it.description as string) ?? "",
-          belongsTo: "-",
-          items: "-",
-          value: "mavjud emas",
-          receivedDate: "",
-          receivedBy: "",
-          storageLocation: (it.location as string) ?? "-",
-          enteredBy: "",
-          images: [],
-          storageDeadline: (it.expiryDate as string) ?? "",
-          storageType: "specific_date",
-          status:
-            (it.status as string) === "COMPLETED"
-              ? "completed"
-              : (it.status as string) === "REMOVED"
-              ? "removed"
-              : "active",
-          createdAt: (it.createdAt as string) ?? new Date().toISOString(),
-        };
-        setEvidence(mapped);
-        setEditData({
-          evidenceNumber: mapped.evidenceNumber,
-          eventDetails: mapped.eventDetails,
-          belongsTo: mapped.belongsTo,
-          items: mapped.items,
-          value: mapped.value,
-          receivedDate: mapped.receivedDate,
-          receivedBy: mapped.receivedBy,
-          storageLocation: mapped.storageLocation,
-          storageType: mapped.storageType,
-          storageDeadline: mapped.storageDeadline,
-        });
+      if (!id) {
+        if (isMounted) setIsLoading(false);
         return;
       }
-      // no fallback to mock; leave as null to show not found UI
+      try {
+        const data = await evidenceApi.getById(id);
+        const payload = data as { data?: unknown } | unknown;
+        const raw = (payload as { data?: unknown }).data ?? payload;
+        if (raw && isMounted) {
+          const it = raw as Record<string, unknown>;
+          const mapped: Evidence = {
+            id: String(it.id ?? id),
+            evidenceNumber:
+              (it.name as string) ?? (it.caseNumber as string) ?? "",
+            eMaterialNumber: (it.caseNumber as string) ?? "",
+            eventDetails: (it.description as string) ?? "",
+            belongsTo: "-",
+            items: "-",
+            value: "mavjud emas",
+            receivedDate: "",
+            receivedBy: "",
+            storageLocation: (it.location as string) ?? "-",
+            enteredBy: "",
+            images: [],
+            storageDeadline: (it.expiryDate as string) ?? "",
+            storageType: "specific_date",
+            status:
+              (it.status as string) === "COMPLETED"
+                ? "completed"
+                : (it.status as string) === "REMOVED"
+                ? "removed"
+                : "active",
+            createdAt: (it.createdAt as string) ?? new Date().toISOString(),
+          };
+          setEvidence(mapped);
+          setEditData({
+            evidenceNumber: mapped.evidenceNumber,
+            eventDetails: mapped.eventDetails,
+            belongsTo: mapped.belongsTo,
+            items: mapped.items,
+            value: mapped.value,
+            receivedDate: mapped.receivedDate,
+            receivedBy: mapped.receivedBy,
+            storageLocation: mapped.storageLocation,
+            storageType: mapped.storageType,
+            storageDeadline: mapped.storageDeadline,
+          });
+        }
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
     })();
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="w-96">
+          <CardContent className="text-center py-8 space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-600" />
+            <p className="text-gray-600">Maʼlumotlar yuklanmoqda...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (!evidence || !editData) {
     return (
