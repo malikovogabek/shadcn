@@ -35,7 +35,10 @@ import {
   AlertTriangle,
   Edit,
   Trash2,
+  Download,
+  Printer,
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
 import { Evidence } from "@/types";
 
@@ -130,24 +133,28 @@ export default function EvidenceDetails() {
     );
   }
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     if (!completionReason.trim()) {
       alert("Tugatish sababini kiriting");
       return;
     }
 
-    const index = mockEvidence.findIndex((e) => e.id === evidence.id);
-    if (index !== -1) {
-      mockEvidence[index] = {
-        ...evidence,
-        status: "completed",
-        completionReason,
-        completionFile: completionFile?.name || "",
-      };
+    try {
+      // Backendga yuboriladigan maydonlarni xaritalaymiz
+      await evidenceApi.update(evidence.id, {
+        name: evidence.evidenceNumber,
+        description: evidence.eventDetails,
+        caseNumber: evidence.eMaterialNumber || "",
+        location: evidence.storageLocation,
+        expiryDate: evidence.storageDeadline || "",
+        category:
+          evidence.storageType === "lifetime" ? "LIFETIME" : "SPECIFIC_DATE",
+      });
+      alert("Ashyoviy dalil muvaffaqiyatli tugatildi!");
+      navigate(-1);
+    } catch (err) {
+      alert("Xatolik yuz berdi. Qayta urinib ko'ring.");
     }
-
-    alert("Ashyoviy dalil muvaffaqiyatli tugatildi!");
-    navigate(-1);
   };
 
   const handleEdit = async () => {
@@ -217,6 +224,113 @@ export default function EvidenceDetails() {
     });
   };
 
+  // QR code ma'lumotlari - to'liq ma'lumot JSON formatida
+  const getQRCodeData = () => {
+    return JSON.stringify({
+      id: evidence.id,
+      evidenceNumber: evidence.evidenceNumber,
+      eventDetails: evidence.eventDetails,
+      belongsTo: evidence.belongsTo,
+      items: evidence.items,
+      value: evidence.value,
+      receivedDate: evidence.receivedDate,
+      receivedBy: evidence.receivedBy,
+      storageLocation: evidence.storageLocation,
+      storageType: evidence.storageType,
+      storageDeadline: evidence.storageDeadline,
+      status: evidence.status,
+      url: `${window.location.origin}/evidence/${evidence.id}`,
+    });
+  };
+
+  // QR code ni yuklab olish
+  const handleDownloadQR = () => {
+    const svg = document.getElementById("qrcode-svg");
+    if (!svg) return;
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const htmlImg = new window.Image();
+
+    htmlImg.onload = () => {
+      canvas.width = htmlImg.width;
+      canvas.height = htmlImg.height;
+      ctx?.drawImage(htmlImg, 0, 0);
+      const pngFile = canvas.toDataURL("image/png");
+      const downloadLink = document.createElement("a");
+      downloadLink.download = `QR-${evidence.evidenceNumber}.png`;
+      downloadLink.href = pngFile;
+      downloadLink.click();
+    };
+
+    const svgBlob = new Blob([svgData], {
+      type: "image/svg+xml;charset=utf-8",
+    });
+    const url = URL.createObjectURL(svgBlob);
+    htmlImg.src = url;
+  };
+
+  // QR code ni print qilish
+  const handlePrintQR = () => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    const qrData = getQRCodeData();
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
+      qrData
+    )}`;
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>QR Code - ${evidence.evidenceNumber}</title>
+          <style>
+            body {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              padding: 40px;
+              font-family: Arial, sans-serif;
+            }
+            .qr-container {
+              text-align: center;
+            }
+            .qr-code {
+              margin: 20px 0;
+            }
+            .info {
+              margin-top: 20px;
+              font-size: 14px;
+              color: #666;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="qr-container">
+            <h2>Ashyoviy Dalil QR Code</h2>
+            <p><strong>Raqam:</strong> ${evidence.evidenceNumber}</p>
+            <div class="qr-code">
+              <img src="${qrUrl}" alt="QR Code" />
+            </div>
+            <div class="info">
+              <p>Ushbu QR code ni skanerlash orqali ashyoviy dalil ma'lumotlarini ko'rish mumkin</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Page Header */}
@@ -245,7 +359,8 @@ export default function EvidenceDetails() {
                   ? "destructive"
                   : "secondary"
               }
-              className="text-sm px-3 py-1">
+              className="text-sm px-3 py-1"
+            >
               {evidence.status === "completed"
                 ? "Tugallangan"
                 : evidence.status === "removed"
@@ -257,18 +372,21 @@ export default function EvidenceDetails() {
               <div className="flex space-x-2">
                 <Button
                   variant="outline"
-                  onClick={() => setIsEditing(!isEditing)}>
+                  onClick={() => setIsEditing(!isEditing)}
+                >
                   <Edit className="h-4 w-4 mr-2" />
                   {isEditing ? "Bekor qilish" : "Tahrirlash"}
                 </Button>
 
                 <Dialog
                   open={isRemoveDialogOpen}
-                  onOpenChange={setIsRemoveDialogOpen}>
+                  onOpenChange={setIsRemoveDialogOpen}
+                >
                   <DialogTrigger asChild>
                     <Button
                       variant="outline"
-                      className="text-red-600 hover:text-red-700">
+                      className="text-red-600 hover:text-red-700"
+                    >
                       <Trash2 className="h-4 w-4 mr-2" />
                       Chiqarib yuborish
                     </Button>
@@ -295,7 +413,8 @@ export default function EvidenceDetails() {
                       <div className="flex justify-end space-x-2">
                         <Button
                           variant="outline"
-                          onClick={() => setIsRemoveDialogOpen(false)}>
+                          onClick={() => setIsRemoveDialogOpen(false)}
+                        >
                           Bekor qilish
                         </Button>
                         <Button variant="destructive" onClick={handleRemove}>
@@ -333,12 +452,14 @@ export default function EvidenceDetails() {
                     onClick={() => {
                       setIsEditing(false);
                       setEditReason("");
-                    }}>
+                    }}
+                  >
                     Bekor qilish
                   </Button>
                   <Button
                     onClick={handleEdit}
-                    className="bg-yellow-600 hover:bg-yellow-700">
+                    className="bg-yellow-600 hover:bg-yellow-700"
+                  >
                     Saqlash
                   </Button>
                 </div>
@@ -524,6 +645,46 @@ export default function EvidenceDetails() {
           </CardContent>
         </Card>
 
+        {/* QR Code Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>QR Code</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center space-y-4">
+            <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
+              <QRCodeSVG
+                id="qrcode-svg"
+                value={getQRCodeData()}
+                size={256}
+                level="H"
+                includeMargin={true}
+              />
+            </div>
+            <p className="text-sm text-gray-600 text-center max-w-md">
+              Ushbu QR code ni skanerlash orqali ashyoviy dalil ma'lumotlarini
+              ko'rish mumkin
+            </p>
+            <div className="flex space-x-2">
+              <Button
+                variant="outline"
+                onClick={handleDownloadQR}
+                className="flex items-center"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                QR Code ni yuklab olish
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handlePrintQR}
+                className="flex items-center"
+              >
+                <Printer className="h-4 w-4 mr-2" />
+                Print qilish
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Storage Information */}
         <Card>
           <CardHeader>
@@ -546,7 +707,8 @@ export default function EvidenceDetails() {
                         ...editData,
                         storageType: value as "specific_date" | "lifetime",
                       })
-                    }>
+                    }
+                  >
                     <SelectTrigger className="mt-1">
                       <SelectValue />
                     </SelectTrigger>
@@ -597,7 +759,8 @@ export default function EvidenceDetails() {
                           !isExpired(evidence.storageDeadline) && (
                             <Badge
                               variant="secondary"
-                              className="text-xs bg-yellow-100 text-yellow-800">
+                              className="text-xs bg-yellow-100 text-yellow-800"
+                            >
                               <AlertTriangle className="h-3 w-3 mr-1" />
                               Tez orada tugaydi
                             </Badge>
@@ -734,7 +897,8 @@ export default function EvidenceDetails() {
                 <div className="flex justify-end">
                   <Button
                     onClick={handleComplete}
-                    className="bg-green-600 hover:bg-green-700">
+                    className="bg-green-600 hover:bg-green-700"
+                  >
                     Ashyoviy Dalilni Tugatish
                   </Button>
                 </div>

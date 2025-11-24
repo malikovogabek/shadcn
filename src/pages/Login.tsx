@@ -83,22 +83,23 @@ export default function Login() {
               <button
                 type="button"
                 className="text-sm text-blue-600 hover:underline"
-                onClick={() => alert("Ushbu funksiya hozircha ishlamaydi")}>
+                onClick={() => alert("Ushbu funksiya hozircha ishlamaydi")}
+              >
                 Parolni unutdingizmi?
               </button>
             </div>
           </form>
 
           {/* Demo Credentials */}
-          <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded">
+          {/* <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded">
             <strong>Demo ma'lumotlar:</strong>
             <br />
-            Admin: admin / admin123
+            Admin: admin /
             <br />
             Tergovchi: tergovchi1 / tergovchi123
             <br />
             Rahbar: rahbar1 / rahbar123
-          </div>
+          </div> */}
         </CardContent>
       </Card>
     </div>
