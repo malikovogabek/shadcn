@@ -29,6 +29,7 @@ import { Evidence } from "@/types";
 import { Eye, AlertTriangle, Search, Filter, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { evidenceApi } from "@/api/evidence";
+import { formatStorageDeadline } from "@/lib/utils";
 
 interface EvidenceTableProps {
   evidenceList?: Evidence[];
@@ -231,7 +232,7 @@ export const EvidenceTable: React.FC<EvidenceTableProps> = ({
                     <span>
                       {evidence.storageType === "lifetime"
                         ? "Umrbod"
-                        : evidence.storageDeadline}
+                        : formatStorageDeadline(evidence.storageDeadline)}
                     </span>
                     {evidence.storageType === "specific_date" && (
                       <>

@@ -40,18 +40,7 @@ import {
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
 import { Evidence } from "@/types";
-
-const formatStorageDeadline = (value: string) => {
-  if (!value) return "-";
-  const [datePart] = value.split("T");
-  if (datePart && /^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
-    return datePart;
-  }
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime())
-    ? value
-    : parsed.toISOString().split("T")[0];
-};
+import { formatStorageDeadline } from "@/lib/utils";
 
 export default function EvidenceDetails() {
   const { id } = useParams<{ id: string }>();
