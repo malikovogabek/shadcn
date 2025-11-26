@@ -8,6 +8,8 @@ export interface CreateEvidencePayload {
   expiryDate: string; // YYYY-MM-DD
   category: string;
   imageUrl?: string;
+  imageUrls?: string[];
+  accountFileUrl?: string;
 }
 
 export const evidenceApi = {

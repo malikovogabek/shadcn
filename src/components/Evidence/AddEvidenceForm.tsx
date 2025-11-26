@@ -33,7 +33,8 @@ export const AddEvidenceForm: React.FC = () => {
     storageLocation: "",
     storageType: "specific_date" as "specific_date" | "lifetime",
     storageDeadline: "",
-    imageUrl: "",
+    imageUrls: [] as string[],
+    accountFileUrl: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -49,7 +50,8 @@ export const AddEvidenceForm: React.FC = () => {
         formData.storageDeadline || new Date().toISOString().slice(0, 10),
       category:
         formData.storageType === "lifetime" ? "LIFETIME" : "SPECIFIC_DATE",
-      imageUrl: formData.imageUrl || undefined,
+      imageUrl:
+        formData.imageUrls.length > 0 ? formData.imageUrls[0] : undefined,
     };
 
     const res = await evidenceApi.create(payload);
@@ -74,7 +76,8 @@ export const AddEvidenceForm: React.FC = () => {
       storageLocation: "",
       storageType: "specific_date",
       storageDeadline: "",
-      imageUrl: "",
+      imageUrls: [],
+      accountFileUrl: "",
     });
   };
 
@@ -82,9 +85,24 @@ export const AddEvidenceForm: React.FC = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleImageUpload = async (file: File | null) => {
+  const handleImageUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const urls: string[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const url = await uploadImageAndGetUrl(files[i]);
+      if (url) urls.push(url);
+    }
+    if (urls.length > 0) {
+      setFormData((prev) => ({
+        ...prev,
+        imageUrls: [...prev.imageUrls, ...urls],
+      }));
+    }
+  };
+
+  const handleAccountFileUpload = async (file: File | null) => {
     const url = await uploadImageAndGetUrl(file);
-    if (url) setFormData((prev) => ({ ...prev, imageUrl: url }));
+    if (url) setFormData((prev) => ({ ...prev, accountFileUrl: url }));
   };
 
   return (
@@ -260,8 +278,16 @@ export const AddEvidenceForm: React.FC = () => {
                 id="accountFile"
                 type="file"
                 accept=".pdf,.doc,.docx"
+                onChange={(e) =>
+                  handleAccountFileUpload(e.target.files?.[0] ?? null)
+                }
                 className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
               />
+              {formData.accountFileUrl && (
+                <p className="text-xs text-gray-600 mt-1">
+                  Yuklandi: {formData.accountFileUrl}
+                </p>
+              )}
             </div>
 
             <div>
@@ -270,13 +296,21 @@ export const AddEvidenceForm: React.FC = () => {
                 id="images"
                 type="file"
                 accept="image/*"
-                onChange={(e) => handleImageUpload(e.target.files?.[0] ?? null)}
+                multiple
+                onChange={(e) => handleImageUpload(e.target.files)}
                 className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
               />
-              {formData.imageUrl && (
-                <p className="text-xs text-gray-600 mt-1">
-                  Yuklandi: {formData.imageUrl}
-                </p>
+              {formData.imageUrls.length > 0 && (
+                <div className="mt-2 space-y-1">
+                  <p className="text-xs text-gray-600">
+                    Yuklangan rasmlar ({formData.imageUrls.length}):
+                  </p>
+                  {formData.imageUrls.map((url, idx) => (
+                    <p key={idx} className="text-xs text-gray-500 truncate">
+                      • {url}
+                    </p>
+                  ))}
+                </div>
               )}
             </div>
           </div>

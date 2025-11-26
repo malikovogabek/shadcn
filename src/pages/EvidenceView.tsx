@@ -31,8 +31,7 @@ export default function EvidenceView() {
           const it = raw as Record<string, unknown>;
           const mapped: Evidence = {
             id: String(it.id ?? id),
-            evidenceNumber:
-              (it.name as string) ?? (it.caseNumber as string) ?? "",
+            evidenceNumber: (it.name as string) ?? "",
             eMaterialNumber: (it.caseNumber as string) ?? "",
             eventDetails: (it.description as string) ?? "",
             belongsTo: "-",
@@ -129,8 +128,7 @@ export default function EvidenceView() {
                   ? "destructive"
                   : "secondary"
               }
-              className="text-sm px-4 py-2 print:text-xs"
-            >
+              className="text-sm px-4 py-2 print:text-xs">
               {evidence.status === "completed"
                 ? "Tugallangan"
                 : evidence.status === "removed"
@@ -156,6 +154,14 @@ export default function EvidenceView() {
                 </Label>
                 <p className="mt-1 text-base font-medium print:text-sm">
                   {evidence.evidenceNumber}
+                </p>
+              </div>
+              <div>
+                <Label className="text-sm font-semibold text-gray-700 print:text-xs">
+                  E-material raqami
+                </Label>
+                <p className="mt-1 text-base font-medium print:text-sm">
+                  {evidence.eMaterialNumber || "-"}
                 </p>
               </div>
               <div>
@@ -347,4 +353,3 @@ export default function EvidenceView() {
     </div>
   );
 }
-

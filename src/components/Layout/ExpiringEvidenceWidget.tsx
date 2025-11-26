@@ -101,7 +101,14 @@ export const ExpiringEvidenceWidget: React.FC = () => {
                   </p>
                   <div className="flex items-center space-x-2 mt-1 text-xs text-gray-500">
                     <Calendar className="h-3 w-3" />
-                    <span>Saqlash muddati: {evidence.storageDeadline}</span>
+                    <span>
+                      Saqlash muddati:{" "}
+                      {
+                        new Date(evidence.storageDeadline)
+                          .toISOString()
+                          .split("T")[0]
+                      }
+                    </span>
                   </div>
                 </div>
                 <div className="ml-4">

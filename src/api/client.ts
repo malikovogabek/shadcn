@@ -98,7 +98,7 @@ export async function http<T = unknown>(path: string, options: RequestOptions = 
   if (contentType.includes("application/json")) {
     return (await res.json()) as T;
   }
-  // @ts-expect-error allow unknown non-json
+  
   return (await res.text()) as T;
 }
 

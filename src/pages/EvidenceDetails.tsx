@@ -309,8 +309,7 @@ export default function EvidenceDetails() {
                   ? "destructive"
                   : "secondary"
               }
-              className="text-sm px-3 py-1"
-            >
+              className="text-sm px-3 py-1">
               {evidence.status === "completed"
                 ? "Tugallangan"
                 : evidence.status === "removed"
@@ -322,21 +321,18 @@ export default function EvidenceDetails() {
               <div className="flex space-x-2">
                 <Button
                   variant="outline"
-                  onClick={() => setIsEditing(!isEditing)}
-                >
+                  onClick={() => setIsEditing(!isEditing)}>
                   <Edit className="h-4 w-4 mr-2" />
                   {isEditing ? "Bekor qilish" : "Tahrirlash"}
                 </Button>
 
                 <Dialog
                   open={isRemoveDialogOpen}
-                  onOpenChange={setIsRemoveDialogOpen}
-                >
+                  onOpenChange={setIsRemoveDialogOpen}>
                   <DialogTrigger asChild>
                     <Button
                       variant="outline"
-                      className="text-red-600 hover:text-red-700"
-                    >
+                      className="text-red-600 hover:text-red-700">
                       <Trash2 className="h-4 w-4 mr-2" />
                       Chiqarib yuborish
                     </Button>
@@ -363,8 +359,7 @@ export default function EvidenceDetails() {
                       <div className="flex justify-end space-x-2">
                         <Button
                           variant="outline"
-                          onClick={() => setIsRemoveDialogOpen(false)}
-                        >
+                          onClick={() => setIsRemoveDialogOpen(false)}>
                           Bekor qilish
                         </Button>
                         <Button variant="destructive" onClick={handleRemove}>
@@ -402,14 +397,12 @@ export default function EvidenceDetails() {
                     onClick={() => {
                       setIsEditing(false);
                       setEditReason("");
-                    }}
-                  >
+                    }}>
                     Bekor qilish
                   </Button>
                   <Button
                     onClick={handleEdit}
-                    className="bg-yellow-600 hover:bg-yellow-700"
-                  >
+                    className="bg-yellow-600 hover:bg-yellow-700">
                     Saqlash
                   </Button>
                 </div>
@@ -450,6 +443,14 @@ export default function EvidenceDetails() {
                       {evidence.evidenceNumber}
                     </p>
                   )}
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">
+                    E-material raqami
+                  </Label>
+                  <p className="mt-1 text-lg font-semibold">
+                    {evidence.eMaterialNumber || "-"}
+                  </p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-700">
@@ -625,8 +626,7 @@ export default function EvidenceDetails() {
                 <Button
                   variant="outline"
                   onClick={handleDownloadQR}
-                  className="flex items-center"
-                >
+                  className="flex items-center">
                   <Download className="h-4 w-4 mr-2" />
                   QR Code ni yuklab olish
                 </Button>
@@ -657,8 +657,7 @@ export default function EvidenceDetails() {
                         ...editData,
                         storageType: value as "specific_date" | "lifetime",
                       })
-                    }
-                  >
+                    }>
                     <SelectTrigger className="mt-1">
                       <SelectValue />
                     </SelectTrigger>
@@ -711,8 +710,7 @@ export default function EvidenceDetails() {
                           !isExpired(evidence.storageDeadline) && (
                             <Badge
                               variant="secondary"
-                              className="text-xs bg-yellow-100 text-yellow-800"
-                            >
+                              className="text-xs bg-yellow-100 text-yellow-800">
                               <AlertTriangle className="h-3 w-3 mr-1" />
                               Tez orada tugaydi
                             </Badge>
@@ -849,8 +847,7 @@ export default function EvidenceDetails() {
                 <div className="flex justify-end">
                   <Button
                     onClick={handleComplete}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
+                    className="bg-green-600 hover:bg-green-700">
                     Ashyoviy Dalilni Tugatish
                   </Button>
                 </div>
