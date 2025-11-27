@@ -37,6 +37,7 @@ import {
   Trash2,
   Download,
   Loader2,
+  Printer,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
@@ -622,13 +623,39 @@ export default function EvidenceDetails() {
                 Ushbu QR code ni skanerlash orqali ashyoviy dalil ma'lumotlarini
                 ko'rish mumkin
               </p>
-              <div className="flex justify-center">
+              <div className="flex justify-center gap-2">
                 <Button
                   variant="outline"
                   onClick={handleDownloadQR}
                   className="flex items-center">
                   <Download className="h-4 w-4 mr-2" />
-                  QR Code ni yuklab olish
+                  Yuklab olish
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const svg = document.getElementById("qrcode-svg");
+                    if (svg) {
+                      const printContent = `
+                        <html>
+                          <head><title>QR Code - ${evidence.evidenceNumber}</title></head>
+                          <body style="display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;">
+                            ${svg.outerHTML}
+                          </body>
+                        </html>
+                      `;
+                      const iframe = document.createElement("iframe");
+                      iframe.style.display = "none";
+                      document.body.appendChild(iframe);
+                      iframe.contentDocument?.write(printContent);
+                      iframe.contentDocument?.close();
+                      iframe.contentWindow?.print();
+                      setTimeout(() => document.body.removeChild(iframe), 1000);
+                    }
+                  }}
+                  className="flex items-center">
+                  <Printer className="h-4 w-4 mr-2" />
+                  Chop etish
                 </Button>
               </div>
             </CardContent>

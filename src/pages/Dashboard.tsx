@@ -5,6 +5,7 @@ import { StatsHeader } from "@/components/Layout/StatsHeader";
 import { EvidenceTable } from "@/components/Evidence/EvidenceTable";
 import { AddEvidenceForm } from "@/components/Evidence/AddEvidenceForm";
 import { UserManagement } from "@/components/Users/UserManagement";
+import { QRScannerComponent } from "@/components/QRScanner/QRScannerComponent";
 import { useAuth } from "@/contexts/AuthContext";
 
 import { evidenceApi } from "@/api/evidence";
@@ -152,6 +153,17 @@ export default function Dashboard() {
   const renderContent = () => {
     if (activeSection === "add") {
       return <AddEvidenceForm />;
+    }
+
+    if (activeSection === "qr-scanner") {
+      return (
+        <QRScannerComponent
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) setActiveSection("dashboard");
+          }}
+        />
+      );
     }
 
     if (activeSection === "users" && user?.role === "admin") {

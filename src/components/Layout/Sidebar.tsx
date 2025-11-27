@@ -11,11 +11,12 @@ import {
   Calendar,
   Archive,
   LogOut,
+  QrCode,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
- 
+
 import { useEffect, useState } from "react";
 import { evidenceApi } from "@/api/evidence";
 import { Evidence } from "@/types";
@@ -40,8 +41,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
     (async () => {
       const data = await evidenceApi.list();
       if (!data) return;
-      const maybeObj = data as unknown as { data?: unknown[]; items?: unknown[] } | unknown;
-      const items: unknown[] = Array.isArray((maybeObj as { data?: unknown[] }).data)
+      const maybeObj = data as unknown as
+        | { data?: unknown[]; items?: unknown[] }
+        | unknown;
+      const items: unknown[] = Array.isArray(
+        (maybeObj as { data?: unknown[] }).data
+      )
         ? ((maybeObj as { data?: unknown[] }).data as unknown[])
         : Array.isArray((maybeObj as { items?: unknown[] }).items)
         ? ((maybeObj as { items?: unknown[] }).items as unknown[])
@@ -204,7 +209,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   // Add "Add Evidence" and "User Management" items for appropriate roles
-  if (user?.role !== "prokuror") {
+  if (user?.role !== "rahbariyat") {
     menuItems.splice(1, 0, {
       id: "add",
       label: "Ashyoviy dalil qo'shish",
@@ -283,8 +288,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </nav>
       </div>
 
-      {/* Logout Button at the bottom */}
-      <div className="border-t border-gray-200 p-2">
+      {/* QR Scanner and Logout at the bottom */}
+      <div className="border-t border-gray-200 p-2 space-y-1">
+        <Button
+          variant={activeSection === "qr-scanner" ? "default" : "ghost"}
+          className={`w-full justify-start ${
+            isOpen ? "px-4" : "px-2 justify-center"
+          } ${
+            activeSection === "qr-scanner"
+              ? "bg-blue-50 text-blue-600 hover:bg-blue-100"
+              : "text-blue-600 hover:bg-blue-50"
+          }`}
+          onClick={() => onSectionChange("qr-scanner")}>
+          <div
+            className={`flex items-center ${isOpen ? "space-x-3" : ""} w-full`}>
+            <QrCode className="h-5 w-5" />
+            {isOpen && <span className="flex-1 text-left">QR Scanner</span>}
+          </div>
+        </Button>
         <Button
           variant="ghost"
           className={`w-full justify-start ${
