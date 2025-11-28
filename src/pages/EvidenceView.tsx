@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { formatStorageDeadline } from "@/lib/utils";
 import {
   FileText,
   Calendar,
@@ -29,6 +30,10 @@ export default function EvidenceView() {
         const raw = (payload as { data?: unknown }).data ?? payload;
         if (raw) {
           const it = raw as Record<string, unknown>;
+          const investigator = it.investigator as
+            | { fullName?: string; username?: string }
+            | undefined;
+
           const mapped: Evidence = {
             id: String(it.id ?? id),
             evidenceNumber: (it.name as string) ?? "",
@@ -37,10 +42,22 @@ export default function EvidenceView() {
             belongsTo: "-",
             items: "-",
             value: "mavjud emas",
-            receivedDate: "",
-            receivedBy: "",
+            // Agar backendda alohida receivedDate bo'lsa — undan, bo'lmasa createdAt dan foydalanamiz
+            receivedDate:
+              (it.receivedDate as string) ?? (it.createdAt as string) ?? "",
+            // Qabul qilgan shaxs — avval receivedBy, bo'lmasa tergovchi (investigator)
+            receivedBy:
+              (it.receivedBy as string) ??
+              investigator?.fullName ??
+              investigator?.username ??
+              "",
             storageLocation: (it.location as string) ?? "-",
-            enteredBy: "",
+            // Kiritgan — shu tergovchi deb qabul qilamiz (kerak bo'lsa keyin alohida maydonga almashtirish mumkin)
+            enteredBy:
+              (it.enteredBy as string) ??
+              investigator?.fullName ??
+              investigator?.username ??
+              "",
             images: [],
             storageDeadline: (it.expiryDate as string) ?? "",
             storageType: "specific_date",
@@ -208,7 +225,7 @@ export default function EvidenceView() {
                   Qabul qilingan sana
                 </Label>
                 <p className="mt-1 font-medium text-base print:text-sm">
-                  {evidence.receivedDate || "-"}
+                  {formatStorageDeadline(evidence.receivedDate)}
                 </p>
               </div>
               <div>

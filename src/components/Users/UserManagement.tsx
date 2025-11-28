@@ -31,6 +31,7 @@ import { User } from "@/types";
 import { usersApi } from "@/api/users";
 import { Plus, Edit, Trash2, Download } from "lucide-react";
 import { toast } from "sonner";
+import { formatStorageDeadline } from "@/lib/utils";
 
 export const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -100,18 +101,9 @@ export const UserManagement: React.FC = () => {
         // Format lastLoginAt if exists
         let lastActivity = "";
         if (createdUser.lastLoginAt) {
-          try {
-            const date = new Date(createdUser.lastLoginAt as string);
-            lastActivity = date.toLocaleString("uz-UZ", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            });
-          } catch {
-            lastActivity = String(createdUser.lastLoginAt);
-          }
+          lastActivity = formatStorageDeadline(
+            createdUser.lastLoginAt as string
+          );
         }
 
         // Map backend role to frontend role
@@ -194,18 +186,7 @@ export const UserManagement: React.FC = () => {
           // Format lastLoginAt to readable date string
           let lastActivity = "";
           if (u.lastLoginAt) {
-            try {
-              const date = new Date(u.lastLoginAt as string);
-              lastActivity = date.toLocaleString("uz-UZ", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              });
-            } catch {
-              lastActivity = String(u.lastLoginAt);
-            }
+            lastActivity = formatStorageDeadline(u.lastLoginAt as string);
           }
 
           // Map backend role to frontend role
@@ -284,7 +265,7 @@ export const UserManagement: React.FC = () => {
         user.name,
         user.username,
         user.role,
-        user.lastActivity || "",
+        user.lastActivity ? formatStorageDeadline(user.lastActivity) : "",
       ]),
     ]
       .map((row) => row.join(","))
@@ -355,8 +336,7 @@ export const UserManagement: React.FC = () => {
                   setEditingUser(null);
                 }
                 setIsAddDialogOpen(open);
-              }}
-            >
+              }}>
               <DialogTrigger asChild>
                 <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
                   <Plus className="h-4 w-4 mr-2" />
@@ -446,8 +426,7 @@ export const UserManagement: React.FC = () => {
                           ...prev,
                           role: value as User["role"],
                         }))
-                      }
-                    >
+                      }>
                       <SelectTrigger>
                         <SelectValue placeholder="Rolni tanlang" />
                       </SelectTrigger>
@@ -473,8 +452,7 @@ export const UserManagement: React.FC = () => {
                           phoneNumber: "",
                           role: "",
                         });
-                      }}
-                    >
+                      }}>
                       Bekor qilish
                     </Button>
                     <Button type="submit">
@@ -513,7 +491,9 @@ export const UserManagement: React.FC = () => {
                 </TableCell>
                 <TableCell>
                   {user.lastActivity ? (
-                    <span className="text-sm">{user.lastActivity}</span>
+                    <span className="text-sm">
+                      {formatStorageDeadline(user.lastActivity)}
+                    </span>
                   ) : (
                     <span className="text-sm text-gray-500 italic">
                       Hech qachon
@@ -525,16 +505,14 @@ export const UserManagement: React.FC = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleEdit(user)}
-                    >
+                      onClick={() => handleEdit(user)}>
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleDelete(user.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
+                      className="text-red-600 hover:text-red-700">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>

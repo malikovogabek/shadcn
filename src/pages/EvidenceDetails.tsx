@@ -83,6 +83,12 @@ export default function EvidenceDetails() {
         const raw = (payload as { data?: unknown }).data ?? payload;
         if (raw && isMounted) {
           const it = raw as Record<string, unknown>;
+
+          // Backenddan keladigan tergovchi ma'lumotlari
+          const investigator = it.investigator as
+            | { fullName?: string; username?: string }
+            | undefined;
+
           const mapped: Evidence = {
             id: String(it.id ?? id),
             evidenceNumber:
@@ -92,10 +98,19 @@ export default function EvidenceDetails() {
             belongsTo: "-",
             items: "-",
             value: "mavjud emas",
-            receivedDate: "",
-            receivedBy: "",
+            receivedDate:
+              (it.receivedDate as string) ?? (it.createdAt as string) ?? "",
+            receivedBy:
+              (it.receivedBy as string) ??
+              investigator?.fullName ??
+              investigator?.username ??
+              "",
             storageLocation: (it.location as string) ?? "-",
-            enteredBy: "",
+            enteredBy:
+              (it.enteredBy as string) ??
+              investigator?.fullName ??
+              investigator?.username ??
+              "",
             images: [],
             storageDeadline: (it.expiryDate as string) ?? "",
             storageType: "specific_date",
@@ -549,7 +564,9 @@ export default function EvidenceDetails() {
                       className="mt-1"
                     />
                   ) : (
-                    <p className="mt-1 font-medium">{evidence.receivedDate}</p>
+                    <p className="mt-1 font-medium">
+                      {formatStorageDeadline(evidence.receivedDate)}
+                    </p>
                   )}
                 </div>
                 <div>
