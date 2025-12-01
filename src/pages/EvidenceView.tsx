@@ -39,9 +39,9 @@ export default function EvidenceView() {
             evidenceNumber: (it.name as string) ?? "",
             eMaterialNumber: (it.caseNumber as string) ?? "",
             eventDetails: (it.description as string) ?? "",
-            belongsTo: "-",
-            items: "-",
-            value: "mavjud emas",
+            belongsTo: (it.accusedFullName as string) ?? "-",
+            items: (it.seizedItems as string) ?? "-",
+            value: (it.estimatedValue as string) ?? "mavjud emas",
             // Agar backendda alohida receivedDate bo'lsa — undan, bo'lmasa createdAt dan foydalanamiz
             receivedDate:
               (it.receivedDate as string) ?? (it.createdAt as string) ?? "",

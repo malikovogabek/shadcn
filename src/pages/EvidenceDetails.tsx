@@ -95,9 +95,9 @@ export default function EvidenceDetails() {
               (it.name as string) ?? (it.caseNumber as string) ?? "",
             eMaterialNumber: (it.caseNumber as string) ?? "",
             eventDetails: (it.description as string) ?? "",
-            belongsTo: "-",
-            items: "-",
-            value: "mavjud emas",
+            belongsTo: (it.accusedFullName as string) ?? "-",
+            items: (it.seizedItems as string) ?? "-",
+            value: (it.estimatedValue as string) ?? "mavjud emas",
             receivedDate:
               (it.receivedDate as string) ?? (it.createdAt as string) ?? "",
             receivedBy:
@@ -189,6 +189,9 @@ export default function EvidenceDetails() {
         expiryDate: evidence.storageDeadline || "",
         category:
           evidence.storageType === "lifetime" ? "LIFETIME" : "SPECIFIC_DATE",
+        accusedFullName: evidence.belongsTo || undefined,
+        seizedItems: evidence.items || undefined,
+        estimatedValue: evidence.value || undefined,
       });
       alert("Ashyoviy dalil muvaffaqiyatli tugatildi!");
       navigate(-1);
@@ -213,6 +216,9 @@ export default function EvidenceDetails() {
         expiryDate: editData.storageDeadline || "",
         category:
           editData.storageType === "lifetime" ? "LIFETIME" : "SPECIFIC_DATE",
+        accusedFullName: editData.belongsTo || undefined,
+        seizedItems: editData.items || undefined,
+        estimatedValue: editData.value || undefined,
       });
     } catch {
       // Agar backend xato qaytarsa, hozircha UI holatini o'zgartirmaymiz

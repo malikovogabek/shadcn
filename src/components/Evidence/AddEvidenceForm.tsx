@@ -52,6 +52,10 @@ export const AddEvidenceForm: React.FC = () => {
         formData.storageType === "lifetime" ? "LIFETIME" : "SPECIFIC_DATE",
       imageUrl:
         formData.imageUrls.length > 0 ? formData.imageUrls[0] : undefined,
+      // Yangi backend maydonlari bilan moslashtiramiz
+      accusedFullName: formData.belongsTo || undefined,
+      seizedItems: formData.items || undefined,
+      estimatedValue: formData.value || undefined,
     };
 
     const res = await evidenceApi.create(payload);

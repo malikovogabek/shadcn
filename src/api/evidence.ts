@@ -10,6 +10,9 @@ export interface CreateEvidencePayload {
   imageUrl?: string;
   imageUrls?: string[];
   accountFileUrl?: string;
+  accusedFullName?: string;
+  seizedItems?: string;
+  estimatedValue?: string;
 }
 
 export const evidenceApi = {
