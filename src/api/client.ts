@@ -1,6 +1,6 @@
 // Common API client: base URL, token storage, and HTTP helpers
 
-export const BASE_URL = "http://94.130.33.123:6001";
+export const BASE_URL = "https://dalil.topsites.uz";
 
 const ACCESS_TOKEN_KEY = "accessToken";
 
