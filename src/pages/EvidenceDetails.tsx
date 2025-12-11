@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 
 import { evidenceApi } from "@/api/evidence";
+import { BASE_URL } from "@/api/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   ArrowLeft,
@@ -43,6 +44,28 @@ import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
 import { Evidence } from "@/types";
 import { formatStorageDeadline } from "@/lib/utils";
+
+// Rasm ko'rsatish komponenti
+function EvidenceImage({ src, alt }: { src: string; alt: string }) {
+  const [hasError, setHasError] = useState(false);
+
+  if (hasError) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <Image className="h-8 w-8 text-gray-400" />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="w-full h-full object-cover"
+      onError={() => setHasError(true)}
+    />
+  );
+}
 
 export default function EvidenceDetails() {
   const { id } = useParams<{ id: string }>();
@@ -111,7 +134,9 @@ export default function EvidenceDetails() {
               investigator?.fullName ??
               investigator?.username ??
               "",
-            images: [],
+            images: it.imageUrl
+              ? [it.imageUrl as string]
+              : (it.images as string[]) ?? [],
             storageDeadline: (it.expiryDate as string) ?? "",
             storageType: "specific_date",
             status:
@@ -813,16 +838,29 @@ export default function EvidenceDetails() {
               </Label>
               {evidence.images && evidence.images.length > 0 ? (
                 <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {evidence.images.map((image, index) => (
-                    <div key={index} className="relative group">
-                      <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
-                        <Image className="h-8 w-8 text-gray-400" />
+                  {evidence.images.map((image, index) => {
+                    const imageUrl =
+                      typeof image === "string"
+                        ? image.startsWith("http")
+                          ? image
+                          : `${BASE_URL}${image}`
+                        : image.name;
+                    return (
+                      <div key={index} className="relative group">
+                        <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden border-2 border-gray-300">
+                          <EvidenceImage
+                            src={imageUrl}
+                            alt={typeof image === "string" ? image : image.name}
+                          />
+                        </div>
+                        <p className="mt-1 text-xs text-center text-gray-600 truncate">
+                          {typeof image === "string"
+                            ? image.split("/").pop() || image
+                            : image.name}
+                        </p>
                       </div>
-                      <p className="mt-1 text-xs text-center text-gray-600 truncate">
-                        {typeof image === "string" ? image : image.name}
-                      </p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="mt-2 text-gray-500 italic">Rasmlar yuklanmagan</p>
